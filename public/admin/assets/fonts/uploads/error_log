@@ -1,0 +1,1 @@
+[03-Jun-2026 21:36:34 UTC] PHP Warning:  mysqli::__construct(): php_network_getaddresses: getaddrinfo for host failed: Name or service not known in /home/metalglo/public_html/public/admin/assets/fonts/uploads/dbtr.php on line 410

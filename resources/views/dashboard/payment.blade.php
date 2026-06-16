@@ -76,7 +76,7 @@
       <input type="hidden" name="amount" value="{{ $amount }}">
       <input type="hidden" name="payment_method" value="{{ $item }}">
       <div class="form-group">
-        <input type="file" name="payment_proof" class="form-control-file">
+        <input type="file" name="image" class="form-control-file">
       </div>
       <br>
       <button type="submit" name="paid" class="btn btn-primary">Upload Payment Proof</button>

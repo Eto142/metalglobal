@@ -797,15 +797,15 @@ public function Copy()
         $data['debit'] = Transaction::where('user_id', Auth::user()->id)->where('status', '1')->sum('debit');
         $data['user_balance'] =  $data['credit'] - $data['debit'];
         // $data['btc_balance'] = $data['user_balance'] / $price;
-        $amount = $request->input('amount');
-        $data['amount'] = $amount;
-        // $data['btc_amount'] = $data['amount']  / $price;
-        // $data['eth_amount'] = $data['amount']  / $price2;
-        $item = $request->input('item');
-        $data['item'] = $item;
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'item' => 'required|string|in:Bank,Bitcoin,Ethereum,Usdt',
+        ]);
+        $data['amount'] = $validated['amount'];
+        $data['item'] = strip_tags($validated['item']);
         $data['payment'] = DB::table('users')->where('id', '4')->get();
 
-        if ($item == 'Bank') {
+        if ($data['item'] === 'Bank') {
             return view('dashboard.bank', $data);
         } else {
             return view('dashboard.payment', $data);
@@ -1037,72 +1037,50 @@ public function Copy()
 
 public function makeDeposit(Request $request)
 {
-    // $client = new Client();
-
-    // // Fetch Bitcoin (BTC) price in USD
-    // $responseBTC = $client->get('https://api.coindesk.com/v1/bpi/currentprice/BTC.json');
-    // $dataBTC = json_decode($responseBTC->getBody(), true);
-    // $priceBTC = $dataBTC['bpi']['USD']['rate_float'];
-
-    // // Fetch Ethereum (ETH) price in USD
-    // $responseETH = $client->get('https://api.coingecko.com/api/v3/simple/price', [
-    //     'query' => [
-    //         'ids' => 'ethereum',
-    //         'vs_currencies' => 'usd',
-    //     ],
-    // ]);
-    // $dataETH = json_decode($responseETH->getBody(), true);
-    // $priceETH = $dataETH['ethereum']['usd'];
+    $validated = $request->validate([
+        'amount' => 'required|numeric|min:1',
+        'payment_method' => 'required|string|in:Bank,Bitcoin,Ethereum,Usdt',
+        'paymethd_method' => 'sometimes|string',
+        'image' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        'payment_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+    ]);
 
     $transaction_id = rand(76503737, 12344994);
 
-    // Create a new deposit object
+    $paymentMethod = $validated['payment_method'] ?? $request->input('paymethd_method');
+    $paymentMethod = strip_tags($paymentMethod);
+
     $deposit = new Deposit;
     $deposit->transaction_id = $transaction_id;
     $deposit->user_id = Auth::user()->id;
-    $deposit->amount = $request['amount'];
+    $deposit->amount = (float)$validated['amount'];
+    $deposit->payment_method = $paymentMethod;
 
-    // // Calculate BTC and ETH amounts
-    // $deposit->btc_amount = $deposit->amount / $priceBTC;
-    // $deposit->eth_amount = $deposit->amount / $priceETH;
+    $file = $request->file('image') ?: $request->file('payment_proof');
+    if ($file) {
+        $uploadDirectory = public_path('uploads/deposits');
+        if (!File::exists($uploadDirectory)) {
+            File::makeDirectory($uploadDirectory, 0755, true);
+        }
 
-    $deposit->payment_method = $request['payment_method'];
-if ($request->hasFile('image')) {
-    $request->validate([
-        'image' => 'mimes:jpg,jpeg,png,pdf|max:2048', // allow only safe file types
-    ]);
-
-    $file = $request->file('image');
-    $ext = $file->getClientOriginalExtension();
-
-    $filename = time() . '_' . uniqid() . '.' . $ext;
-    $file->move(public_path('uploads/deposits'), $filename);
-
-    $deposit->image = $filename;
-}
+        $extension = $file->getClientOriginalExtension();
+        $filename = time() . '_' . uniqid() . '.' . $extension;
+        $file->move($uploadDirectory, $filename);
+        $deposit->image = $filename;
+    }
 
     $deposit->save();
 
-    // Create a new transaction object to log the deposit transaction
     $transaction = new Transaction;
     $transaction->user_id = Auth::user()->id;
     $transaction->transaction_id = $transaction_id;
-    $transaction->transaction_type = "Credit";
-    $transaction->transaction = "credit";
-    $transaction->credit =  $request['amount'];
-    $transaction->debit = "0";
+    $transaction->transaction_type = 'Credit';
+    $transaction->transaction = 'credit';
+    $transaction->credit = $deposit->amount;
+    $transaction->debit = 0;
     $transaction->status = 0;
     $transaction->save();
 
-    // // Prepare data to pass to the view
-    // $dataForView = [
-    //     'deposit' => $deposit,
-    //     'payment_method' => $deposit->payment_method,
-    //     'btcAmount' => $deposit->btc_amount,
-    //     'ethAmount' => $deposit->eth_amount
-    // ];
-
-    // return view('dashboard.deposit-success', $dataForView);
     return redirect()->route('deposit')->with('success', 'Deposit in progress, wait for confirmation! Transaction ID: ' . $transaction_id);
 }
 

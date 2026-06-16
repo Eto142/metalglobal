@@ -256,7 +256,7 @@ href="{{asset('https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.mi
   <ul class="nav flex-column in">
     <li class="nav-item ">
       <div class="nav-link">
-        <h5><span>Sun 27th October 2024</span></h5>
+        {{-- <h5><span>Sun 27th October 2024</span></h5> --}}
       </div>
     </li>
     <li class="nav-item ">

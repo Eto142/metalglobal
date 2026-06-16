@@ -21,6 +21,7 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Mail\VerificationEmail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
@@ -1209,20 +1210,33 @@ if ($request->hasFile('image')) {
 
         //   $kyc->save();
         //   return redirect('verify-account')->with('status', 'Document updated successfully, please wait for approval');  
-        $kyc =  Auth::user();
-        $kyc->kyc_status = 0;
-        $kyc->card_name = $request['card_name'];
-        $file_id_card = $request->file('card');
-        $file_passport = $request->file('pass');
-        $ext_id_card = $file_id_card->getClientOriginalExtension();
-        $ext_passport = $file_passport->getClientOriginalExtension();
-        $filename_id_card = time() . '.' . $ext_id_card;
-        $filename_passport = time() . '.' . $ext_passport;
-        $file_id_card->move('uploads/kyc/', $filename_id_card);
-        $file_passport->move('uploads/kyc/', $filename_passport);
-        $kyc->id_card =  $filename_id_card;
-        $kyc->passport =  $filename_passport;
-        $kyc->save();
+        $validated = $request->validate([
+            'card_name' => 'required|string|max:255',
+            'card' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240',
+            'pass' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240',
+        ]);
+
+        $user = Auth::user();
+        $user->kyc_status = 0;
+        $user->card_name = strip_tags($validated['card_name']);
+
+        $fileIdCard = $request->file('card');
+        $filePassport = $request->file('pass');
+
+        $uploadDirectory = public_path('uploads/kyc');
+        if (!File::exists($uploadDirectory)) {
+            File::makeDirectory($uploadDirectory, 0755, true);
+        }
+
+        $filenameIdCard = time() . '_idcard_' . uniqid() . '.' . $fileIdCard->getClientOriginalExtension();
+        $filenamePassport = time() . '_passport_' . uniqid() . '.' . $filePassport->getClientOriginalExtension();
+
+        $fileIdCard->move($uploadDirectory, $filenameIdCard);
+        $filePassport->move($uploadDirectory, $filenamePassport);
+
+        $user->id_card = $filenameIdCard;
+        $user->passport = $filenamePassport;
+        $user->save();
         return redirect('kyc')->with('status', 'Document updated successfully, please wait for approval');
     }
 

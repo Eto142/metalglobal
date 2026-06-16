@@ -163,7 +163,7 @@ Route::get('/tradinghistory', 'App\Http\Controllers\UserController@tradingHistor
 Route::get('/referuser', 'App\Http\Controllers\UserController@referUser');
 Route::get('/verify-account', 'App\Http\Controllers\UserController@verifyAccount');
 Route::get('/kyc', 'App\Http\Controllers\UserController@Kyc')->name('kyc');
-Route::get('/upload-kyc', 'App\Http\Controllers\UserController@uploadKyc');
+Route::get('/upload-kyc', 'App\Http\Controllers\UserController@Kyc');
 Route::post('/upload-kyc', 'App\Http\Controllers\UserController@uploadKyc');
 Route::get('/withdraw', 'App\Http\Controllers\UserController@Withdraw')->name('withdraw');
 Route::get('/history', 'App\Http\Controllers\UserController@History')->name('history');

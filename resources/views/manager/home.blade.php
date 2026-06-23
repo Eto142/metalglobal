@@ -2,6 +2,7 @@
 @include('manager.navbar')
 <!-- Sidebar wrapper end -->
 
+
 <!-- Content wrapper scroll start -->
 <div class="content-wrapper-scroll">
 
